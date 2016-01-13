@@ -1,0 +1,6 @@
+<launch>
+  <node name="graspit_ros" pkg="graspit" type="graspit" args="-p libgraspit_eval_interface  -r Barrett -g /home/jvarley/shape_completion/runtime_ws/src/graspit-ros/graspit/graspit_source/models/objects/mug_small.xml -c /home/jvarley/shape_completion/runtime_ws/src/graspit-ros/graspit/graspit_source/models/objects/mug.xml" output="screen">
+    <env name="GRASPIT" value="$(find graspit)/graspit_source"/>
+    <env name="GRASPIT_PLUGIN_DIR" value="$(find graspit_moveit_plugin)/../../devel/lib"/>
+  </node>
+</launch>
