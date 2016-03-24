@@ -27,11 +27,12 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(Qt4 COMPONENTS QtCore QtGui  REQUIRED)
 find_package(Eigen REQUIRED)
 find_package(Boost REQUIRED thread system)
+find_package(PCL REQUIRED)
 
 #fixes qt signals slots, boost incompatability
 ADD_DEFINITIONS(-DQT_NO_KEYWORDS)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
@@ -113,8 +114,9 @@ MESSAGE( STATUS "catkin include dirs: " ${catkin_INCLUDE_DIRS} )
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(${catkin_INCLUDE_DIRS} ${QT_INCLUDES})
-
+include_directories(${catkin_INCLUDE_DIRS} ${QT_INCLUDES} ${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
 ADD_DEFINITIONS(${QT_DEFINITIONS})
 
 set(SOURCES
@@ -153,6 +155,7 @@ include_directories("${CMAKE_BINARY_DIR}")
  target_link_libraries(graspit_eval_interface
    ${catkin_LIBRARIES}
    ${QT_LIBRARIES}
+   ${PCL_LIBRARIES}
  )
 
 

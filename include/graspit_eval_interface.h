@@ -82,6 +82,10 @@ private:
 
   QString gt_mesh_filepath;
   QString completed_mesh_filepath;
+  QString result_filepath;
+  int scale;
+  bool render_it;
+  double jaccard;
 
   int num_steps;
 
