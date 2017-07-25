@@ -35,7 +35,7 @@
   <!-- Authors do not have to be maintianers, but could be -->
   <!-- Example: -->
   <!-- <author email="jane.doe@example.com">Jane Doe</author> -->
-  <author>Matei Ciocarlie</author>
+  <author>Jake Varley</author>
 
   <!-- The *_depend tags are used to specify dependencies -->
   <!-- Dependencies can be catkin packages or system dependencies -->
@@ -55,14 +55,14 @@
    <build_depend>sensor_msgs</build_depend>
    <build_depend>manipulation_msgs</build_depend>
    <build_depend>graspit</build_depend>
-   <build_depend>graspit_ros_planning_msgs</build_depend>
+   
 
    <run_depend>roscpp</run_depend>
    <run_depend>geometry_msgs</run_depend>
    <run_depend>sensor_msgs</run_depend>
    <run_depend>manipulation_msgs</run_depend>
    <run_depend>graspit</run_depend>
-   <run_depend>graspit_ros_planning_msgs</run_depend>
+   
 
 
   <export>

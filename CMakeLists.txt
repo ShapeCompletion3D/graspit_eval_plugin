@@ -19,8 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
     graspit
     actionlib
     moveit_msgs
-    moveit_ros_planning_interface
-    graspit_msgs)
+    moveit_ros_planning_interface)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)

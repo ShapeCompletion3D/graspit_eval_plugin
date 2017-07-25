@@ -42,13 +42,13 @@
 #include <include/world.h>
 #include <include/body.h>
 #include <include/robot.h>
-#include <include/graspitGUI.h>
+#include <include/graspitCore.h>
 #include <include/ivmgr.h>
 
 #include <include/EGPlanner/egPlanner.h>
 #include <include/EGPlanner/simAnnPlanner.h>
 #include <include/EGPlanner/searchState.h>
-#include <include/EGPlanner/searchEnergy.h>
+#include <include/EGPlanner/energy/searchEnergy.h>
 
 #include <pcl/point_cloud.h>
 #include <pcl/PCLPointCloud2.h>
@@ -148,9 +148,7 @@ int EvalPlugin::mainLoop()
     {
         std::cout << "FINISHED Planning\n" ;
 
-        SearchEnergy *mEnergyCalculator = new SearchEnergy();
-        mEnergyCalculator->setType(ENERGY_CONTACT_QUALITY);
-        mEnergyCalculator->setContactType(CONTACT_PRESET);
+        SearchEnergy *mEnergyCalculator = SearchEnergyFactory::getInstance()->createEnergy("GUIDED_POTENTIAL_QUALITY_ENERGY");
 
         int num_grasps = mPlanner->getListSize();
         std::cout << "Found " << num_grasps << " Grasps. " << std::endl;
@@ -163,19 +161,19 @@ int EvalPlugin::mainLoop()
             bool is_legal;
             double new_planned_energy;
 
-            mEnergyCalculator->analyzeCurrentPosture(mHand,graspItGUI->getMainWorld()->getGB(0),is_legal,new_planned_energy,false );
+            mEnergyCalculator->analyzeCurrentPosture(mHand,graspitCore->getWorld()->getGB(0),is_legal,new_planned_energy,false );
             gps.setEnergy(new_planned_energy);
         }
 
         //remove completed body
         std::cout << "About to Remove Body\n" ;
-        graspItGUI->getMainWorld()->destroyElement(graspItGUI->getMainWorld()->getGB(0));
+        graspitCore->getWorld()->destroyElement(graspitCore->getWorld()->getGB(0));
         std::cout << "Removed Body\n" ;
 
         //add gt body
         std::cout << "About to add GT Body: " << gt_mesh_filepath.toStdString().c_str() << "\n" ;
-        graspItGUI->getMainWorld()->importBody("GraspableBody", gt_mesh_filepath);
-        graspItGUI->getMainWorld()->getGB(0)->setGeometryScaling(scale,scale,scale);
+        graspitCore->getWorld()->importBody("GraspableBody", gt_mesh_filepath);
+        graspitCore->getWorld()->getGB(0)->setGeometryScaling(scale,scale,scale);
         std::cout << "Added GT Body\n" ;
         evaluatingGrasps = true;
 
@@ -195,7 +193,7 @@ int EvalPlugin::mainLoop()
         for(int i=0; i < num_grasps; i++)
         {
             GraspPlanningState gps = mPlanner->getGrasp(i);
-            gps.setObject(graspItGUI->getMainWorld()->getGB(0));
+            gps.setObject(graspitCore->getWorld()->getGB(0));
 
             double desiredVals [mHand->getNumDOF()];
             double desiredSteps [mHand->getNumDOF()];
@@ -208,19 +206,19 @@ int EvalPlugin::mainLoop()
             double old_energy = gps.getEnergy();
             //mEnergyCalculator->analyzeState(legal,new_energy, &gps);
             //disable collisions
-            graspItGUI->getMainWorld()->toggleAllCollisions(false);
+            graspitCore->getWorld()->toggleAllCollisions(false);
             usleep(10000);
             gps.execute(mHand);
             mHand->getDOFVals(desiredVals);
 
-            double initial_joint_values [mHand->getNumJoints()];
-            mHand->getJointValues(initial_joint_values);
+//            double initial_joint_values [mHand->getNumJoints()];
+//            mHand->getJointValues(initial_joint_values);
 
             transf initial_tran = mHand->getPalm()->getTran();
 
             if(render_it)
             {
-                graspItGUI->getIVmgr()->getViewer()->render();
+                graspitCore->getIVmgr()->getViewer()->render();
                 usleep(1000000);
             }
             //mHand->quickOpen();
@@ -228,22 +226,22 @@ int EvalPlugin::mainLoop()
 
             if(render_it)
             {
-                graspItGUI->getIVmgr()->getViewer()->render();
+                graspitCore->getIVmgr()->getViewer()->render();
                 usleep(1000000);
             }
 
             mHand->approachToContact(-200.0);
             if(render_it)
             {
-                graspItGUI->getIVmgr()->getViewer()->render();
+                graspitCore->getIVmgr()->getViewer()->render();
                 usleep(1000000);
             }
 
-            graspItGUI->getMainWorld()->toggleAllCollisions(true);
+            graspitCore->getWorld()->toggleAllCollisions(true);
             mHand->approachToContact(200);
             if(render_it)
             {
-                graspItGUI->getIVmgr()->getViewer()->render();
+                graspitCore->getIVmgr()->getViewer()->render();
                 usleep(1000000);
             }
             //gps.execute(mHand);
@@ -257,16 +255,16 @@ int EvalPlugin::mainLoop()
 
             if(render_it)
             {
-                graspItGUI->getIVmgr()->getViewer()->render();
+                graspitCore->getIVmgr()->getViewer()->render();
                 usleep(1000000);
             }
             mHand->autoGrasp(render_it, 1.0, false);
 
-            double final_joint_values [mHand->getNumJoints()];
-            mHand->getJointValues(final_joint_values);
+//            double final_joint_values [mHand->getNumJoints()];
+//            mHand->getJointValues(final_joint_values);
             transf final_tran = mHand->getPalm()->getTran();
 
-            mEnergyCalculator->analyzeCurrentPosture(mHand,graspItGUI->getMainWorld()->getGB(0),legal,new_energy,false );
+            mEnergyCalculator->analyzeCurrentPosture(mHand,graspitCore->getWorld()->getGB(0),legal,new_energy,false );
 
 //            outfile << "Planned Meshfile,";
             outfile << completed_mesh_filepath.toStdString().c_str() << ",";
@@ -279,35 +277,35 @@ int EvalPlugin::mainLoop()
 //            outfile << "Evaluated Quality,";
             outfile << new_energy << ",";
 //            outfile << "Planned Joint Values,";
-            for (int j =0; j < mHand->getNumJoints(); j++)
-            {
-                outfile << initial_joint_values[j] << ";" ;
-            }
+//            for (int j =0; j < mHand->getNumJoints(); j++)
+//            {
+//                outfile << initial_joint_values[j] << ";" ;
+//            }
             outfile << ",";
 
 //            outfile << "Evaluated Joint Values,";
-           for (int j =0; j < mHand->getNumJoints(); j++)
-           {
-               outfile << final_joint_values[j] << ";" ;
-           }
+//           for (int j =0; j < mHand->getNumJoints(); j++)
+//           {
+//               outfile << final_joint_values[j] << ";" ;
+//           }
            outfile << ",";
 //            outfile << "Planned Pose Values,";
            outfile << initial_tran.translation().x() << ";";
            outfile << initial_tran.translation().y() << ";";
            outfile << initial_tran.translation().z() << ";";
-           outfile << initial_tran.rotation().w << ";";
-           outfile << initial_tran.rotation().x << ";";
-           outfile << initial_tran.rotation().y << ";";
-           outfile << initial_tran.rotation().z << ";";
+           outfile << initial_tran.rotation().w() << ";";
+           outfile << initial_tran.rotation().x() << ";";
+           outfile << initial_tran.rotation().y() << ";";
+           outfile << initial_tran.rotation().z() << ";";
            outfile << ",";
 //            outfile << "Evaluated Pose Values" << std::endl;
            outfile << final_tran.translation().x() << ";";
            outfile << final_tran.translation().y() << ";";
            outfile << final_tran.translation().z() << ";";
-           outfile << final_tran.rotation().w << ";";
-           outfile << final_tran.rotation().x << ";";
-           outfile << final_tran.rotation().y << ";";
-           outfile << final_tran.rotation().z << ";";
+           outfile << final_tran.rotation().w() << ";";
+           outfile << final_tran.rotation().x() << ";";
+           outfile << final_tran.rotation().y() << ";";
+           outfile << final_tran.rotation().z() << ";";
 
            outfile << ",";
 
@@ -330,12 +328,12 @@ int EvalPlugin::mainLoop()
     {
         std::cout << "Starting Planner\n" ;
 
-        graspItGUI->getMainWorld()->importBody("GraspableBody", completed_mesh_filepath);
-        graspItGUI->getMainWorld()->getGB(0)->setGeometryScaling(scale,scale,scale);
+        graspitCore->getWorld()->importBody("GraspableBody", completed_mesh_filepath);
+        graspitCore->getWorld()->getGB(0)->setGeometryScaling(scale,scale,scale);
 
-        mObject = graspItGUI->getMainWorld()->getGB(0);
+        mObject = graspitCore->getWorld()->getGB(0);
 
-        mHand = graspItGUI->getMainWorld()->getCurrentHand();
+        mHand = graspitCore->getWorld()->getCurrentHand();
         mHand->getGrasp()->setObjectNoUpdate(mObject);
         mHand->getGrasp()->setGravity(false);
 
@@ -348,9 +346,10 @@ int EvalPlugin::mainLoop()
         mPlanner = new SimAnnPlanner(mHand);
         ((SimAnnPlanner*)mPlanner)->setModelState(mHandObjectState);
 
-        mPlanner->setEnergyType(ENERGY_CONTACT_QUALITY);
+        mPlanner->setEnergyType("POTENTIAL_QUALITY_ENERGY");
         mPlanner->setContactType(CONTACT_PRESET);
         mPlanner->setMaxSteps(num_steps);
+
 
         mPlanner->resetPlanner();
 
